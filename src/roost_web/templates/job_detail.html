@@ -20,6 +20,22 @@
     </div>
   {% endif %}
 
+  {% if stuck_reasons %}
+    <aside class="stuck">
+      <header>⚠ Why is this job sitting in <code>available</code>?</header>
+      <ul>
+        {% for reason in stuck_reasons %}<li>{{ reason }}</li>{% endfor %}
+      </ul>
+    </aside>
+  {% elif job.state == 'available' and explain %}
+    <p class="subtle">
+      Nothing's blocking this job — a worker should pick it up on the next fetch.
+      {% if explain.executing_count %}
+        ({{ explain.executing_count }} other <code>{{ job.task }}</code> job(s) are currently executing.)
+      {% endif %}
+    </p>
+  {% endif %}
+
   {% if not read_only %}
   <div class="actions">
     <form method="post" action="{{ url_for('jobs.retry', job_id=job.id) }}"

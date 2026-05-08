@@ -221,6 +221,24 @@ table.overview td.state-cancelled { color: var(--fg-muted); }
 
 .link { font-size: 13px; }
 
+.stuck {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+}
+.stuck header {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--fg);
+}
+.stuck ul {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--fg);
+}
+
 .checkbox-cell {
   width: 32px;
   text-align: center;

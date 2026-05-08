@@ -53,6 +53,19 @@ async def list_jobs(request: Request) -> Response:
         where.append(f"args @> ${len(args) + 1}::jsonb")
         args.append(args_json_filter)
 
+    # Stuck filter: jobs in `available` that the worker can't fetch right now.
+    stuck_filter = request.query_params.get("stuck", "").strip().lower() in {"1", "true", "yes"}
+    if stuck_filter:
+        where.append(
+            "state = 'available' AND ("
+            "scheduled_at > now() OR "
+            "queue IN (SELECT name FROM roost.queues WHERE paused_at IS NOT NULL) OR "
+            "EXISTS ("
+            "  SELECT 1 FROM roost.jobs p "
+            "   WHERE p.id = ANY(roost.jobs.depends_on) AND p.state <> 'completed'"
+            "))"
+        )
+
     clause = ("WHERE " + " AND ".join(where)) if where else ""
     offset = (page - 1) * _PAGE_SIZE
 
@@ -87,6 +100,7 @@ async def list_jobs(request: Request) -> Response:
             "task": task_filter,
             "tag": tag_filter,
             "args_json": args_json_filter,
+            "stuck": stuck_filter,
         },
         "read_only": request.app.state.read_only,
     }
@@ -98,15 +112,42 @@ async def show_job(request: Request) -> Response:
     pool = request.app.state.pool
     async with pool.acquire() as conn:
         row = await conn.fetchrow("SELECT * FROM roost.jobs WHERE id = $1", job_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail=f"job {job_id} not found")
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"job {job_id} not found")
+        explain = await repo.explain_job_async(conn, job_id)
     context: dict[str, Any] = {
         "request": request,
         "title": request.app.state.title,
         "job": dict(row),
+        "explain": explain,
+        "stuck_reasons": _stuck_reasons(dict(row), explain),
         "read_only": request.app.state.read_only,
     }
     return templates.TemplateResponse(request, "job_detail.html", context)
+
+
+def _stuck_reasons(job: dict[str, Any], explain: dict[str, Any]) -> list[str]:
+    """Plain-English reasons the job hasn't run yet. Empty if it's not stuck."""
+    state = job.get("state")
+    if state != "available":
+        return []
+    reasons: list[str] = []
+    if explain.get("scheduled_in_future"):
+        reasons.append(
+            f"Scheduled in the future — scheduled_at is {job.get('scheduled_at')}."
+        )
+    if explain.get("queue_paused"):
+        reasons.append(
+            f"Queue {job.get('queue')!r} is paused. Resume it on the Queues page."
+        )
+    parents = explain.get("waiting_on_parents") or []
+    if parents:
+        reasons.append(
+            "Waiting on parent job(s): "
+            + ", ".join(f"#{p}" for p in parents)
+            + " — child runs once every parent completes."
+        )
+    return reasons
 
 
 async def retry_job(request: Request) -> Response:
