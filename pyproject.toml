@@ -36,7 +36,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "roost>=0.1.0.dev0",
+    "pgroost>=0.1.0.dev0",
     "starlette>=0.45.0",
     "jinja2>=3.1.0",
     "asyncpg>=0.31.0",
@@ -53,8 +53,9 @@ docs = [
 ]
 
 [tool.uv.sources]
-# Local development — picks up ../roost. CI / PyPI installs the published version.
-roost = { path = "../roost", editable = true }
+# Local development — picks up ../roost (PyPI dist name is pgroost).
+# CI / PyPI installs the published pgroost.
+pgroost = { path = "../roost", editable = true }
 
 [project.urls]
 Homepage = "https://github.com/ashhadahsan/roost-web"

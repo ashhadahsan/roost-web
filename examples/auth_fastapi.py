@@ -6,7 +6,7 @@ short-circuits before any dashboard route runs.
 
 Run::
 
-    pip install roost roost-web fastapi uvicorn 'python-jose[cryptography]'
+    pip install pgroost roost-web fastapi uvicorn 'python-jose[cryptography]'
     export ROOST_DSN=postgresql://...
     roost init --apply
     uvicorn examples.auth_fastapi:app --reload
