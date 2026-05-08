@@ -1,0 +1,48 @@
+<div class="table-meta">
+  Showing <strong>{{ rows|length }}</strong> of <strong>{{ total }}</strong> jobs.
+  Page <strong>{{ page }}</strong> / <strong>{{ total_pages }}</strong>.
+</div>
+
+<table class="data">
+  <thead>
+    <tr>
+      <th>id</th>
+      <th>queue</th>
+      <th>task</th>
+      <th>state</th>
+      <th class="num">attempt</th>
+      <th>scheduled</th>
+      <th>tags</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+      <tr class="state-row state-{{ r.state }}">
+        <td><a href="{{ url_for('jobs.show', job_id=r.id) }}">{{ r.id }}</a></td>
+        <td>{{ r.queue }}</td>
+        <td><code>{{ r.task }}</code></td>
+        <td><span class="pill state-{{ r.state }}">{{ r.state }}</span></td>
+        <td class="num">{{ r.attempt }}/{{ r.max_attempts }}</td>
+        <td title="{{ r.scheduled_at | humanize_dt }}">{{ r.scheduled_at | relative_dt }}</td>
+        <td>
+          {% for tag in r.tags or [] %}<span class="pill subtle">{{ tag }}</span>{% endfor %}
+        </td>
+        <td><a href="{{ url_for('jobs.show', job_id=r.id) }}" class="link">view →</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="empty">No jobs match these filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<nav class="pager">
+  {% if page > 1 %}
+    <a hx-get="{{ url_for('jobs.list') }}?{% if filters.state %}state={{ filters.state }}&{% endif %}{% if filters.queue %}queue={{ filters.queue }}&{% endif %}{% if filters.task %}task={{ filters.task }}&{% endif %}page={{ page - 1 }}"
+       hx-target="#jobs-table" hx-push-url="true">← prev</a>
+  {% endif %}
+  {% if page < total_pages %}
+    <a hx-get="{{ url_for('jobs.list') }}?{% if filters.state %}state={{ filters.state }}&{% endif %}{% if filters.queue %}queue={{ filters.queue }}&{% endif %}{% if filters.task %}task={{ filters.task }}&{% endif %}page={{ page + 1 }}"
+       hx-target="#jobs-table" hx-push-url="true">next →</a>
+  {% endif %}
+</nav>

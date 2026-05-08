@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Job {{ job.id }}{% endblock %}
+{% block content %}
+<section class="page-head">
+  <a href="{{ url_for('jobs.list') }}" class="link">← back to jobs</a>
+  <h1>Job {{ job.id }} <span class="pill state-{{ job.state }}">{{ job.state }}</span></h1>
+  <div class="meta">
+    <span><strong>queue:</strong> {{ job.queue }}</span>
+    <span><strong>task:</strong> <code>{{ job.task }}</code></span>
+    <span><strong>attempt:</strong> {{ job.attempt }}/{{ job.max_attempts }}</span>
+    <span><strong>priority:</strong> {{ job.priority }}</span>
+    {% if job.unique_key %}<span><strong>unique_key:</strong> <code>{{ job.unique_key }}</code></span>{% endif %}
+    {% if job.timeout_seconds %}<span><strong>timeout:</strong> {{ job.timeout_seconds }}s</span>{% endif %}
+    {% if job.cancel_requested %}<span class="pill warn">cancel requested</span>{% endif %}
+  </div>
+
+  {% if job.tags %}
+    <div class="tags">
+      {% for tag in job.tags %}<span class="pill subtle">{{ tag }}</span>{% endfor %}
+    </div>
+  {% endif %}
+
+  {% if not read_only %}
+  <div class="actions">
+    <form method="post" action="{{ url_for('jobs.retry', job_id=job.id) }}"
+          hx-post="{{ url_for('jobs.retry', job_id=job.id) }}" hx-confirm="Retry this job?">
+      <button type="submit" class="btn">Retry</button>
+    </form>
+    <form method="post" action="{{ url_for('jobs.cancel', job_id=job.id) }}"
+          hx-post="{{ url_for('jobs.cancel', job_id=job.id) }}" hx-confirm="Cancel this job?">
+      <button type="submit" class="btn btn-warn">Cancel</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+
+<section class="page-head">
+  <h2>Args</h2>
+  <pre class="code">{{ job.args | to_json }}</pre>
+</section>
+
+<section class="page-head">
+  <h2>Timing</h2>
+  <table class="data kv">
+    <tbody>
+      <tr><th>inserted_at</th><td title="{{ job.inserted_at | humanize_dt }}">{{ job.inserted_at | relative_dt }}</td></tr>
+      <tr><th>scheduled_at</th><td title="{{ job.scheduled_at | humanize_dt }}">{{ job.scheduled_at | relative_dt }}</td></tr>
+      <tr><th>attempted_at</th><td>{% if job.attempted_at %}<span title="{{ job.attempted_at | humanize_dt }}">{{ job.attempted_at | relative_dt }}</span>{% else %}—{% endif %}</td></tr>
+      <tr><th>completed_at</th><td>{% if job.completed_at %}<span title="{{ job.completed_at | humanize_dt }}">{{ job.completed_at | relative_dt }}</span>{% else %}—{% endif %}</td></tr>
+      <tr><th>cancelled_at</th><td>{% if job.cancelled_at %}<span title="{{ job.cancelled_at | humanize_dt }}">{{ job.cancelled_at | relative_dt }}</span>{% else %}—{% endif %}</td></tr>
+      <tr><th>discarded_at</th><td>{% if job.discarded_at %}<span title="{{ job.discarded_at | humanize_dt }}">{{ job.discarded_at | relative_dt }}</span>{% else %}—{% endif %}</td></tr>
+    </tbody>
+  </table>
+</section>
+
+{% if job.result %}
+<section class="page-head">
+  <h2>Result</h2>
+  <pre class="code">{{ job.result | to_json }}</pre>
+</section>
+{% endif %}
+
+{% if job.errors %}
+<section class="page-head">
+  <h2>Errors ({{ job.errors|length }})</h2>
+  {% for err in job.errors %}
+    <article class="error">
+      <header>
+        <strong>attempt {{ err.attempt }}</strong> · {{ err.at }}
+      </header>
+      <p class="error-msg">{{ err.error }}</p>
+      {% if err.trace %}<pre class="code subtle">{{ err.trace }}</pre>{% endif %}
+    </article>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

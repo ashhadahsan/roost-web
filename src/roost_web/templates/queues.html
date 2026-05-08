@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Queues{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>Queues</h1>
+  <p class="subtle">Pause/resume here. Workers stop fetching from paused queues immediately; in-flight jobs finish.</p>
+
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Name</th><th class="num">available</th><th class="num">executing</th>
+        <th class="num">retryable</th><th class="num">discarded</th>
+        <th>Status</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for name in queue_names %}
+        {% set counts = by_queue.get(name, {}) %}
+        <tr>
+          <td><strong>{{ name }}</strong></td>
+          <td class="num">{{ counts.get('available', 0) }}</td>
+          <td class="num">{{ counts.get('executing', 0) }}</td>
+          <td class="num">{{ counts.get('retryable', 0) }}</td>
+          <td class="num">{{ counts.get('discarded', 0) }}</td>
+          <td>
+            {% if name in paused %}
+              <span class="pill warn">paused</span>
+              <span class="subtle" title="{{ paused[name] | humanize_dt }}">{{ paused[name] | relative_dt }}</span>
+            {% else %}
+              <span class="pill">running</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if not read_only %}
+              {% if name in paused %}
+                <form method="post" action="{{ url_for('queues.resume') }}"
+                      hx-post="{{ url_for('queues.resume') }}">
+                  <input type="hidden" name="queue" value="{{ name }}" />
+                  <button type="submit" class="btn">Resume</button>
+                </form>
+              {% else %}
+                <form method="post" action="{{ url_for('queues.pause') }}"
+                      hx-post="{{ url_for('queues.pause') }}"
+                      hx-confirm="Pause '{{ name }}'?">
+                  <input type="hidden" name="queue" value="{{ name }}" />
+                  <button type="submit" class="btn btn-warn">Pause</button>
+                </form>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="empty">No queues yet — enqueue something.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

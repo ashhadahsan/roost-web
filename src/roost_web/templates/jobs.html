@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Jobs{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>Jobs</h1>
+  <form class="filters" hx-get="{{ url_for('jobs.list') }}" hx-target="#jobs-table" hx-trigger="change, submit"
+        hx-push-url="true">
+    <label>State
+      <select name="state">
+        <option value="">all</option>
+        {% for s in states %}
+          <option value="{{ s }}" {% if filters.state == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Queue
+      <input name="queue" value="{{ filters.queue }}" placeholder="any" />
+    </label>
+    <label>Task
+      <input name="task" value="{{ filters.task }}" placeholder="any" />
+    </label>
+    <button type="submit">Filter</button>
+  </form>
+</section>
+
+<div id="jobs-table"
+     sse-connect="{{ url_for('events.jobs') }}" sse-swap="inserted,updated"
+     hx-get="{{ url_for('jobs.list') }}{% if filters.state or filters.queue or filters.task or page > 1 %}?{% endif %}{% if filters.state %}state={{ filters.state }}&{% endif %}{% if filters.queue %}queue={{ filters.queue }}&{% endif %}{% if filters.task %}task={{ filters.task }}&{% endif %}page={{ page }}"
+     hx-trigger="sse:inserted, sse:updated throttle:1s" hx-swap="innerHTML">
+  {% include "_jobs_table.html" %}
+</div>
+{% endblock %}

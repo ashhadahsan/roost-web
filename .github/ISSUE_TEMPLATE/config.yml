@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security disclosure
+    url: https://github.com/ashhadahsan/roost-web/security/advisories/new
+    about: Report security vulnerabilities privately. Do not file a public issue.
+  - name: Roost (core) issues
+    url: https://github.com/ashhadahsan/roost/issues
+    about: Worker, schema, retries, cron — file there, not here.

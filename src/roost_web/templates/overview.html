@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<section class="page-head" sse-connect="{{ url_for('events.jobs') }}" sse-swap="inserted,updated"
+         hx-get="" hx-trigger="sse:inserted, sse:updated throttle:1s" hx-target="this" hx-swap="outerHTML">
+  <h1>Overview</h1>
+  <p class="subtle">Live counters for every queue. Auto-refreshes on row changes.</p>
+
+  <table class="data overview">
+    <thead>
+      <tr>
+        <th>Queue</th>
+        {% for state in states %}<th>{{ state }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for queue in queues %}
+        <tr>
+          <td>
+            <strong>{{ queue }}</strong>
+            {% if queue in paused %}<span class="pill warn">paused</span>{% endif %}
+          </td>
+          {% for state in states %}
+            <td class="num state-{{ state }}">
+              {% set n = grouped[queue].get(state, 0) %}
+              {% if n %}{{ n }}{% else %}<span class="zero">·</span>{% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% else %}
+        <tr><td colspan="{{ states|length + 1 }}" class="empty">No jobs yet.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if queues %}
+    <tfoot>
+      <tr>
+        <th>Total</th>
+        {% for state in states %}<th class="num state-{{ state }}">{{ totals[state] }}</th>{% endfor %}
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</section>
+
+<section class="page-head">
+  <h2>Workers</h2>
+  {% if workers %}
+    <table class="data">
+      <thead>
+        <tr><th>id</th><th>host</th><th>pid</th><th>queues</th><th>last seen</th></tr>
+      </thead>
+      <tbody>
+        {% for w in workers %}
+          <tr>
+            <td><code>{{ w.id }}</code></td>
+            <td>{{ w.hostname }}</td>
+            <td>{{ w.pid }}</td>
+            <td>{{ ', '.join(w.queues or []) }}</td>
+            <td title="{{ w.last_seen_at | humanize_dt }}">{{ w.last_seen_at | relative_dt }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">No workers heartbeating right now.</p>
+  {% endif %}
+</section>
+{% endblock %}

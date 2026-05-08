@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ title }}{% endblock %} · Roost</title>
+  <link rel="icon" href="{{ url_for('static', path='/logo-mark.svg') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}" />
+  <script src="{{ url_for('static', path='/htmx.min.js') }}" defer></script>
+  <script src="{{ url_for('static', path='/htmx-sse.min.js') }}" defer></script>
+</head>
+<body hx-ext="sse">
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a class="brand" href="{{ url_for('overview') }}">
+        <img src="{{ url_for('static', path='/logo-mark.svg') }}" alt="" width="28" height="28" />
+        <span>{{ title }}</span>
+      </a>
+      <nav class="nav">
+        <a href="{{ url_for('overview') }}">Overview</a>
+        <a href="{{ url_for('jobs.list') }}">Jobs</a>
+        <a href="{{ url_for('queues.list') }}">Queues</a>
+        <a href="{{ url_for('workers.list') }}">Workers</a>
+      </nav>
+      {% if read_only %}<span class="pill warn">read-only</span>{% endif %}
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    Roost · <a href="https://github.com/ashhadahsan/roost">core</a> ·
+    <a href="https://github.com/ashhadahsan/roost-web">dashboard</a>
+  </footer>
+</body>
+</html>

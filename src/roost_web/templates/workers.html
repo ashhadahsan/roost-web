@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Workers{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>Workers</h1>
+  <p class="subtle">Heartbeats from running workers. Stale rows are GC'd by peers.</p>
+
+  {% if rows %}
+  <table class="data">
+    <thead>
+      <tr>
+        <th>id</th><th>host</th><th class="num">pid</th><th>queues</th>
+        <th>started</th><th>last seen</th><th class="num">in-flight</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in rows %}
+        <tr>
+          <td><code>{{ w.id }}</code></td>
+          <td>{{ w.hostname }}</td>
+          <td class="num">{{ w.pid }}</td>
+          <td>{{ ', '.join(w.queues or []) }}</td>
+          <td title="{{ w.started_at | humanize_dt }}">{{ w.started_at | relative_dt }}</td>
+          <td title="{{ w.last_seen_at | humanize_dt }}">{{ w.last_seen_at | relative_dt }}</td>
+          <td class="num">{{ (w.metadata or {}).get('inflight', 0) }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No workers heartbeating.</p>
+  {% endif %}
+</section>
+{% endblock %}
