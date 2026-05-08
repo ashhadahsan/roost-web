@@ -6,6 +6,21 @@
   <h1>Overview</h1>
   <p class="subtle">Live counters for every queue. Auto-refreshes on row changes.</p>
 
+  {% if buckets and buckets | length > 0 %}
+    {% set max_val = (buckets | map(attribute='completed') | max) or 1 %}
+    <div class="sparkline-wrap">
+      <div class="sparkline-meta subtle">last 60m · completed/min</div>
+      <svg class="sparkline" viewBox="0 0 600 60" preserveAspectRatio="none" aria-label="completed per minute, last 60 minutes">
+        {% for b in buckets %}
+          {% set h = ((b.completed or 0) / max_val * 50) %}
+          <rect x="{{ loop.index0 * (600 / (buckets | length)) }}" y="{{ 55 - h }}"
+                width="{{ (600 / (buckets | length)) - 1 }}" height="{{ h }}"
+                class="spark-bar" />
+        {% endfor %}
+      </svg>
+    </div>
+  {% endif %}
+
   <table class="data overview">
     <thead>
       <tr>

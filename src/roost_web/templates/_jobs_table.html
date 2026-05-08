@@ -3,46 +3,82 @@
   Page <strong>{{ page }}</strong> / <strong>{{ total_pages }}</strong>.
 </div>
 
-<table class="data">
-  <thead>
-    <tr>
-      <th>id</th>
-      <th>queue</th>
-      <th>task</th>
-      <th>state</th>
-      <th class="num">attempt</th>
-      <th>scheduled</th>
-      <th>tags</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for r in rows %}
-      <tr class="state-row state-{{ r.state }}">
-        <td><a href="{{ url_for('jobs.show', job_id=r.id) }}">{{ r.id }}</a></td>
-        <td>{{ r.queue }}</td>
-        <td><code>{{ r.task }}</code></td>
-        <td><span class="pill state-{{ r.state }}">{{ r.state }}</span></td>
-        <td class="num">{{ r.attempt }}/{{ r.max_attempts }}</td>
-        <td title="{{ r.scheduled_at | humanize_dt }}">{{ r.scheduled_at | relative_dt }}</td>
-        <td>
-          {% for tag in r.tags or [] %}<span class="pill subtle">{{ tag }}</span>{% endfor %}
-        </td>
-        <td><a href="{{ url_for('jobs.show', job_id=r.id) }}" class="link">view →</a></td>
+<form
+  method="post"
+  action="{{ url_for('jobs.bulk') }}"
+  hx-post="{{ url_for('jobs.bulk') }}"
+  hx-confirm="Apply this action to the selected jobs?"
+>
+  <table class="data">
+    <thead>
+      <tr>
+        {% if not read_only %}
+          <th class="checkbox-cell"><input type="checkbox" id="bulk-select-all" /></th>
+        {% endif %}
+        <th>id</th>
+        <th>queue</th>
+        <th>task</th>
+        <th>state</th>
+        <th class="num">attempt</th>
+        <th>scheduled</th>
+        <th>tags</th>
+        <th></th>
       </tr>
-    {% else %}
-      <tr><td colspan="8" class="empty">No jobs match these filters.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+        <tr class="state-row state-{{ r.state }}">
+          {% if not read_only %}
+            <td class="checkbox-cell"><input type="checkbox" name="job_ids" value="{{ r.id }}" /></td>
+          {% endif %}
+          <td><a href="{{ url_for('jobs.show', job_id=r.id) }}">{{ r.id }}</a></td>
+          <td>{{ r.queue }}</td>
+          <td><code>{{ r.task }}</code></td>
+          <td><span class="pill state-{{ r.state }}">{{ r.state }}</span></td>
+          <td class="num">{{ r.attempt }}/{{ r.max_attempts }}</td>
+          <td title="{{ r.scheduled_at | humanize_dt }}">{{ r.scheduled_at | relative_dt }}</td>
+          <td>
+            {% for tag in r.tags or [] %}<span class="pill subtle">{{ tag }}</span>{% endfor %}
+          </td>
+          <td><a href="{{ url_for('jobs.show', job_id=r.id) }}" class="link">view →</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="9" class="empty">No jobs match these filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if not read_only and rows %}
+    <div class="bulk-bar">
+      <span class="subtle">With selected:</span>
+      <button type="submit" name="action" value="retry" class="btn">Retry</button>
+      <button type="submit" name="action" value="cancel" class="btn btn-warn">Cancel</button>
+    </div>
+  {% endif %}
+</form>
 
 <nav class="pager">
+  {% set qs %}{% if filters.state %}state={{ filters.state }}&{% endif %}{% if filters.queue %}queue={{ filters.queue }}&{% endif %}{% if filters.task %}task={{ filters.task }}&{% endif %}{% if filters.tag %}tag={{ filters.tag }}&{% endif %}{% endset %}
   {% if page > 1 %}
-    <a hx-get="{{ url_for('jobs.list') }}?{% if filters.state %}state={{ filters.state }}&{% endif %}{% if filters.queue %}queue={{ filters.queue }}&{% endif %}{% if filters.task %}task={{ filters.task }}&{% endif %}page={{ page - 1 }}"
+    <a hx-get="{{ url_for('jobs.list') }}?{{ qs }}page={{ page - 1 }}"
        hx-target="#jobs-table" hx-push-url="true">← prev</a>
   {% endif %}
   {% if page < total_pages %}
-    <a hx-get="{{ url_for('jobs.list') }}?{% if filters.state %}state={{ filters.state }}&{% endif %}{% if filters.queue %}queue={{ filters.queue }}&{% endif %}{% if filters.task %}task={{ filters.task }}&{% endif %}page={{ page + 1 }}"
+    <a hx-get="{{ url_for('jobs.list') }}?{{ qs }}page={{ page + 1 }}"
        hx-target="#jobs-table" hx-push-url="true">next →</a>
   {% endif %}
 </nav>
+
+<script>
+  // Select-all checkbox toggles every row checkbox in the same form.
+  (function () {
+    const all = document.getElementById('bulk-select-all');
+    if (!all) return;
+    all.addEventListener('change', () => {
+      const form = all.closest('form');
+      form.querySelectorAll('input[type=checkbox][name=job_ids]').forEach((cb) => {
+        cb.checked = all.checked;
+      });
+    });
+  })();
+</script>

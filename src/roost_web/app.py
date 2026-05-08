@@ -24,6 +24,7 @@ from starlette.staticfiles import StaticFiles
 
 from roost_web.api.v1 import api_routes
 from roost_web.db import close_pool, open_pool
+from roost_web.routes import cron as cron_routes
 from roost_web.routes import jobs as jobs_routes
 from roost_web.routes import overview as overview_routes
 from roost_web.routes import queues as queues_routes
@@ -62,6 +63,7 @@ def create_app(
     routes = [
         Route("/", overview_routes.index, name="overview"),
         Route("/jobs", jobs_routes.list_jobs, name="jobs.list"),
+        Route("/jobs/bulk", jobs_routes.bulk_action, methods=["POST"], name="jobs.bulk"),
         Route("/jobs/{job_id:int}", jobs_routes.show_job, name="jobs.show"),
         Route("/jobs/{job_id:int}/retry", jobs_routes.retry_job, methods=["POST"], name="jobs.retry"),
         Route(
@@ -74,6 +76,8 @@ def create_app(
         Route("/queues/pause", queues_routes.pause, methods=["POST"], name="queues.pause"),
         Route("/queues/resume", queues_routes.resume, methods=["POST"], name="queues.resume"),
         Route("/workers", workers_routes.list_workers, name="workers.list"),
+        Route("/workers/{worker_id:path}", workers_routes.show_worker, name="workers.show"),
+        Route("/cron", cron_routes.list_cron, name="cron.list"),
         Route("/events/jobs", sse_routes.stream_jobs, name="events.jobs"),
         Mount("/api/v1", routes=api_routes(), name="api"),
         Mount("/static", app=StaticFiles(directory=str(_STATIC_DIR)), name="static"),

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Worker {{ worker.id }}{% endblock %}
+{% block content %}
+<section class="page-head">
+  <a href="{{ url_for('workers.list') }}" class="link">← back to workers</a>
+  <h1><code>{{ worker.id }}</code></h1>
+  <div class="meta">
+    <span><strong>host:</strong> {{ worker.hostname }}</span>
+    <span><strong>pid:</strong> {{ worker.pid }}</span>
+    <span><strong>queues:</strong> {{ ', '.join(worker.queues or []) }}</span>
+    <span><strong>started:</strong> <span title="{{ worker.started_at | humanize_dt }}">{{ worker.started_at | relative_dt }}</span></span>
+    <span><strong>last seen:</strong> <span title="{{ worker.last_seen_at | humanize_dt }}">{{ worker.last_seen_at | relative_dt }}</span></span>
+    <span><strong>in-flight:</strong> {{ (worker.metadata or {}).get('inflight', 0) }}</span>
+    <span><strong>concurrency:</strong> {{ (worker.metadata or {}).get('concurrency', '—') }}</span>
+  </div>
+</section>
+
+<section class="page-head">
+  <h2>Recent jobs claimed</h2>
+  {% if recent %}
+    <table class="data">
+      <thead>
+        <tr>
+          <th>id</th>
+          <th>queue</th>
+          <th>task</th>
+          <th>state</th>
+          <th class="num">attempt</th>
+          <th>attempted_at</th>
+          <th>completed_at</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent %}
+          <tr class="state-row state-{{ r.state }}">
+            <td><a href="{{ url_for('jobs.show', job_id=r.id) }}">{{ r.id }}</a></td>
+            <td>{{ r.queue }}</td>
+            <td><code>{{ r.task }}</code></td>
+            <td><span class="pill state-{{ r.state }}">{{ r.state }}</span></td>
+            <td class="num">{{ r.attempt }}/{{ r.max_attempts }}</td>
+            <td>{% if r.attempted_at %}<span title="{{ r.attempted_at | humanize_dt }}">{{ r.attempted_at | relative_dt }}</span>{% else %}—{% endif %}</td>
+            <td>{% if r.completed_at %}<span title="{{ r.completed_at | humanize_dt }}">{{ r.completed_at | relative_dt }}</span>{% else %}—{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">This worker hasn't claimed any jobs yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

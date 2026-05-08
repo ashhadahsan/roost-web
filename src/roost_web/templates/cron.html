@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Cron{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>Cron entries</h1>
+  <p class="subtle">
+    Read straight from <code>roost.cron_runs</code>. The scheduler is
+    cluster-singleton (Postgres advisory lock); whichever worker holds the
+    lock fires due entries every 60 seconds.
+  </p>
+
+  {% if rows %}
+    <table class="data">
+      <thead>
+        <tr>
+          <th>name</th>
+          <th>last fired</th>
+          <th class="num">runs total</th>
+          <th>most recent state</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td><strong>{{ r.name }}</strong></td>
+            <td title="{{ r.last_run_at | humanize_dt }}">{{ r.last_run_at | relative_dt }}</td>
+            <td class="num">{{ r.run_count }}</td>
+            <td>
+              {% if r.last_state %}
+                <span class="pill state-{{ r.last_state }}">{{ r.last_state }}</span>
+              {% else %}
+                <span class="zero">·</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">No cron entries have fired yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

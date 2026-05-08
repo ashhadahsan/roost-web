@@ -1383,8 +1383,9 @@ requires-dist = [
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = ">=0.5.2" },
     { name = "structlog", specifier = ">=25.5.0" },
     { name = "typer", specifier = ">=0.25.1" },
+    { name = "watchfiles", marker = "extra == 'reload'", specifier = ">=0.24" },
 ]
-provides-extras = ["docs", "otel", "metrics"]
+provides-extras = ["docs", "otel", "metrics", "reload"]
 
 [package.metadata.requires-dev]
 dev = [

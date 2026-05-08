@@ -21,6 +21,7 @@ async def index(request: Request) -> Response:
         rows = await repo.status_counts_async(conn)
         workers = await repo.list_workers_async(conn)
         queue_rows = await repo.list_queues_async(conn)
+        buckets = await repo.throughput_buckets_async(conn, minutes=60, bucket_seconds=60)
 
     paused = {q for q, paused_at in queue_rows if paused_at is not None}
     grouped: dict[str, dict[str, int]] = defaultdict(lambda: dict.fromkeys(_STATE_ORDER, 0))
@@ -42,6 +43,7 @@ async def index(request: Request) -> Response:
         "totals": totals,
         "workers": workers,
         "paused": paused,
+        "buckets": buckets,
         "read_only": request.app.state.read_only,
     }
     return templates.TemplateResponse(request, "overview.html", context)

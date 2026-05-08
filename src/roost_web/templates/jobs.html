@@ -19,13 +19,19 @@
     <label>Task
       <input name="task" value="{{ filters.task }}" placeholder="any" />
     </label>
+    <label>Tag
+      <input name="tag" value="{{ filters.tag }}" placeholder="any" />
+    </label>
+    <label>Args JSON contains
+      <input name="args_json" value="{{ filters.args_json }}" placeholder='{"user_id": 42}' style="min-width: 220px;" />
+    </label>
     <button type="submit">Filter</button>
   </form>
 </section>
 
 <div id="jobs-table"
      sse-connect="{{ url_for('events.jobs') }}" sse-swap="inserted,updated"
-     hx-get="{{ url_for('jobs.list') }}{% if filters.state or filters.queue or filters.task or page > 1 %}?{% endif %}{% if filters.state %}state={{ filters.state }}&{% endif %}{% if filters.queue %}queue={{ filters.queue }}&{% endif %}{% if filters.task %}task={{ filters.task }}&{% endif %}page={{ page }}"
+     hx-get="{{ url_for('jobs.list') }}?{% if filters.state %}state={{ filters.state }}&{% endif %}{% if filters.queue %}queue={{ filters.queue }}&{% endif %}{% if filters.task %}task={{ filters.task }}&{% endif %}{% if filters.tag %}tag={{ filters.tag }}&{% endif %}page={{ page }}"
      hx-trigger="sse:inserted, sse:updated throttle:1s" hx-swap="innerHTML">
   {% include "_jobs_table.html" %}
 </div>

@@ -16,7 +16,7 @@
     <tbody>
       {% for w in rows %}
         <tr>
-          <td><code>{{ w.id }}</code></td>
+          <td><a href="{{ url_for('workers.show', worker_id=w.id) }}"><code>{{ w.id }}</code></a></td>
           <td>{{ w.hostname }}</td>
           <td class="num">{{ w.pid }}</td>
           <td>{{ ', '.join(w.queues or []) }}</td>

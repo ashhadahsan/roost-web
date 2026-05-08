@@ -20,6 +20,7 @@
         <a href="{{ url_for('overview') }}">Overview</a>
         <a href="{{ url_for('jobs.list') }}">Jobs</a>
         <a href="{{ url_for('queues.list') }}">Queues</a>
+        <a href="{{ url_for('cron.list') }}">Cron</a>
         <a href="{{ url_for('workers.list') }}">Workers</a>
       </nav>
       {% if read_only %}<span class="pill warn">read-only</span>{% endif %}

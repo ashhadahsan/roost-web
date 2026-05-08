@@ -23,6 +23,7 @@ async def list_jobs(request: Request) -> Response:
     state_filter = request.query_params.get("state", "").strip()
     queue_filter = request.query_params.get("queue", "").strip()
     task_filter = request.query_params.get("task", "").strip()
+    tag_filter = request.query_params.get("tag", "").strip()
 
     where: list[str] = []
     args: list[Any] = []
@@ -35,6 +36,22 @@ async def list_jobs(request: Request) -> Response:
     if task_filter:
         where.append(f"task = ${len(args) + 1}")
         args.append(task_filter)
+    if tag_filter:
+        # GIN-indexed; ARRAY-contains via @> operator
+        where.append(f"tags @> ARRAY[${len(args) + 1}]::text[]")
+        args.append(tag_filter)
+
+    # JSON-path containment: ?args_json={"user_id": 42} → args @> '{"user_id": 42}'
+    args_json_filter = request.query_params.get("args_json", "").strip()
+    if args_json_filter:
+        try:
+            import json
+
+            json.loads(args_json_filter)  # syntax-check; reject anything else
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail=f"args_json is not valid JSON: {exc}") from exc
+        where.append(f"args @> ${len(args) + 1}::jsonb")
+        args.append(args_json_filter)
 
     clause = ("WHERE " + " AND ".join(where)) if where else ""
     offset = (page - 1) * _PAGE_SIZE
@@ -68,6 +85,8 @@ async def list_jobs(request: Request) -> Response:
             "state": state_filter,
             "queue": queue_filter,
             "task": task_filter,
+            "tag": tag_filter,
+            "args_json": args_json_filter,
         },
         "read_only": request.app.state.read_only,
     }
@@ -110,6 +129,49 @@ async def cancel_job(request: Request) -> Response:
         except JobNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
     return _post_action_response(request, job_id)
+
+
+async def bulk_action(request: Request) -> Response:
+    """Apply ``retry`` or ``cancel`` to many job ids at once.
+
+    Accepts a form body with repeated ``job_ids`` checkbox values + an
+    ``action`` field. Errors on individual rows are tolerated — the
+    response includes how many actually changed.
+    """
+    form = await request.form()
+    action_raw = form.get("action") or ""
+    if not isinstance(action_raw, str):
+        raise HTTPException(status_code=400, detail="action must be a string")
+    action = action_raw.strip()
+    raw_ids = form.getlist("job_ids")
+    try:
+        job_ids = [int(x) for x in raw_ids if isinstance(x, str)]
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="job_ids must be integers") from exc
+    if not job_ids:
+        raise HTTPException(status_code=400, detail="no job_ids selected")
+    if action not in {"retry", "cancel"}:
+        raise HTTPException(status_code=400, detail="action must be retry or cancel")
+
+    pool = request.app.state.pool
+    changed = 0
+    async with pool.acquire() as conn:
+        for jid in job_ids:
+            try:
+                if action == "retry":
+                    await repo.retry_job_async(conn, jid)
+                else:
+                    await repo.cancel_job_async(conn, jid)
+                changed += 1
+            except JobNotFoundError:
+                continue
+
+    if request.headers.get("HX-Request") == "true":
+        return Response(
+            status_code=204,
+            headers={"HX-Refresh": "true", "X-Roost-Bulk-Changed": str(changed)},
+        )
+    return RedirectResponse(url=request.headers.get("referer") or ".", status_code=303)
 
 
 def _post_action_response(request: Request, job_id: int) -> Response:
