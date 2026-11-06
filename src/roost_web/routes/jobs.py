@@ -133,13 +133,9 @@ def _stuck_reasons(job: dict[str, Any], explain: dict[str, Any]) -> list[str]:
         return []
     reasons: list[str] = []
     if explain.get("scheduled_in_future"):
-        reasons.append(
-            f"Scheduled in the future — scheduled_at is {job.get('scheduled_at')}."
-        )
+        reasons.append(f"Scheduled in the future — scheduled_at is {job.get('scheduled_at')}.")
     if explain.get("queue_paused"):
-        reasons.append(
-            f"Queue {job.get('queue')!r} is paused. Resume it on the Queues page."
-        )
+        reasons.append(f"Queue {job.get('queue')!r} is paused. Resume it on the Queues page.")
     parents = explain.get("waiting_on_parents") or []
     if parents:
         reasons.append(
