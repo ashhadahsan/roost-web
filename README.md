@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD041 -->
 <p align="center">
-  <img src="src/roost_web/static/logo.svg" alt="Roost" width="180"/>
+  <img src="https://raw.githubusercontent.com/ashhadahsan/roost-web/main/src/roost_web/static/logo.svg" alt="Roost" width="180"/>
 </p>
 
 <h1 align="center">roost-web</h1>
@@ -13,14 +13,20 @@
   <a href="https://pypi.org/project/roost-web/"><img src="https://img.shields.io/pypi/v/roost-web.svg" alt="PyPI"/></a>
   <a href="https://pypi.org/project/roost-web/"><img src="https://img.shields.io/pypi/pyversions/roost-web.svg" alt="Python versions"/></a>
   <a href="https://github.com/ashhadahsan/roost-web/actions/workflows/ci.yml"><img src="https://github.com/ashhadahsan/roost-web/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/pypi/l/roost-web.svg" alt="MIT"/></a>
+  <a href="https://github.com/ashhadahsan/roost-web/blob/main/LICENSE"><img src="https://img.shields.io/pypi/l/roost-web.svg" alt="MIT"/></a>
 </p>
 
-> 🚧 **Alpha** — under active development. Pin exactly.
+> 🚧 **Alpha**: under active development. Pin exactly.
 
-## What is this?
+![Overview: live counters per queue and state, completed jobs per minute, running workers](https://raw.githubusercontent.com/ashhadahsan/roost-web/main/docs/screenshots/overview.png)
 
-A dashboard you mount inside your existing Python app:
+## Install
+
+```bash
+pip install roost-web        # pulls in pgroost, the Roost core
+```
+
+## Mount it
 
 ```python
 from fastapi import FastAPI
@@ -30,13 +36,15 @@ app = FastAPI()
 app.mount("/jobs", dashboard(dsn="postgresql://..."))
 ```
 
-Three lines, no separate deploy, no Node.js. Inherits your host app's auth.
+Three lines, no separate deploy, no Node.js. It runs inside your app, so it sits behind your app's auth.
 
-## Why HTMX, not React?
+## Screens
 
-This is an *embedded* admin dashboard for a Python queue. Audience is developers and oncall engineers, not consumers. The killer property is "pure Python pip install, mount, done." A React/Next.js dashboard would force every Python shop to deploy a separate SPA + API + configure CORS. We picked the same trade-off Oban Web (LiveView) and Django Admin make.
-
-If you want a custom UI: there's a stable `JSON API at /api/v1` you can build whatever you like against.
+| Jobs | Job detail |
+|---|---|
+| ![Jobs list with filters for state, queue, task, tag and args JSON, bulk retry and cancel](https://raw.githubusercontent.com/ashhadahsan/roost-web/main/docs/screenshots/jobs.png) | ![Job detail with args, timing, retry and cancel buttons, and the error from each attempt](https://raw.githubusercontent.com/ashhadahsan/roost-web/main/docs/screenshots/job.png) |
+| **Queues** | |
+| ![Queues with counts per state and pause or resume per queue](https://raw.githubusercontent.com/ashhadahsan/roost-web/main/docs/screenshots/queues.png) | |
 
 ## Features
 
@@ -44,18 +52,24 @@ If you want a custom UI: there's a stable `JSON API at /api/v1` you can build wh
 |---|---|
 | Drop-in mount | `app.mount("/jobs", dashboard(dsn=...))` |
 | Live updates | Server-Sent Events backed by Postgres `LISTEN`/`NOTIFY` |
-| Read-only mode | `dashboard(dsn=..., read_only=True)` for staging |
-| JSON API | `GET /api/v1/jobs`, `POST /api/v1/jobs/{id}/retry`, etc. |
-| Pages | Overview · Jobs (filterable, paginated) · Job detail · Queues (pause/resume) · Workers |
-| Auth | Delegated to host app — wire your own middleware |
-| Bundle | HTMX + hand-written CSS · ~60KB total · no Node toolchain |
+| Pages | Overview · Jobs (filter by state, queue, task, tag or args JSON; bulk retry and cancel) · Job detail · Queues (pause and resume) · Cron · Workers and worker detail |
+| Read-only mode | `dashboard(dsn=..., read_only=True)` returns 403 for every action |
+| JSON API | `GET /api/v1/jobs`, `POST /api/v1/jobs/{id}/retry`, and so on |
+| Auth | Delegated to the host app: wire your own middleware |
+| Bundle | HTMX + hand-written CSS, about 60 KB, no Node toolchain |
+
+## Why HTMX, not React?
+
+This is an *embedded* admin dashboard for a Python queue. Its users are developers and on-call engineers. The property that matters is "pip install, mount, done". A React or Next.js dashboard would make every Python shop deploy a separate SPA and API and configure CORS. Oban Web (LiveView) and Django Admin make the same trade-off.
+
+For a custom UI, build against the JSON API at `/api/v1`.
 
 ## Compatibility
 
-- **Python:** 3.10, 3.11, 3.12, 3.13.
-- **PostgreSQL:** 13, 14, 15, 16.
-- **Roost:** `>=0.1.0`.
-- **Hosts:** any ASGI app — FastAPI, Starlette, Django (via ASGI mount), Litestar, Quart.
+- **Python:** 3.10 to 3.14.
+- **PostgreSQL:** 13 to 18.
+- **Roost:** `pgroost` 0.1.x (`>=0.1.1,<0.2`).
+- **Hosts:** any ASGI app: FastAPI, Starlette, Django (via ASGI mount), Litestar, Quart.
 
 ## Mounting examples
 
@@ -79,6 +93,10 @@ from roost_web import dashboard
 app = Starlette(routes=[Mount("/jobs", app=dashboard(dsn="..."))])
 ```
 
+### Behind auth
+
+See [`examples/auth_fastapi.py`](https://github.com/ashhadahsan/roost-web/blob/main/examples/auth_fastapi.py) and [`examples/auth_starlette_basic.py`](https://github.com/ashhadahsan/roost-web/blob/main/examples/auth_starlette_basic.py).
+
 ### Standalone
 
 ```bash
@@ -99,8 +117,8 @@ uvicorn examples.standalone:app --port 8000
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md). All participants are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+See [CONTRIBUTING.md](https://github.com/ashhadahsan/roost-web/blob/main/CONTRIBUTING.md). Security: [SECURITY.md](https://github.com/ashhadahsan/roost-web/blob/main/SECURITY.md). All participants are expected to follow the [Code of Conduct](https://github.com/ashhadahsan/roost-web/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](https://github.com/ashhadahsan/roost-web/blob/main/LICENSE).

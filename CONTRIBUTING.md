@@ -11,7 +11,7 @@ uv sync
 uv run pre-commit install
 ```
 
-`uv sync` picks up the local Roost checkout at `../roost` (configured via `[tool.uv.sources]`). For CI / production installs, pip resolves `roost` from PyPI normally.
+`uv sync` installs the published `pgroost` from PyPI, the same version CI tests against. To work against a local Roost checkout at `../roost` instead, run `uv pip install -e ../roost` after `uv sync` (the next `uv sync` puts the PyPI version back).
 
 You will need Docker running for the test suite — we use `testcontainers[postgres]`.
 

@@ -22,19 +22,17 @@ def _humanize_dt(value: datetime | None) -> str:
 def _relative_dt(value: datetime | None) -> str:
     if value is None:
         return "—"
-    delta = datetime.now(tz=timezone.utc) - value.astimezone(timezone.utc)
-    seconds = int(delta.total_seconds())
-    if seconds < 0:
-        return f"in {-seconds}s"
-    if seconds < 60:
-        return f"{seconds}s ago"
-    minutes = seconds // 60
-    if minutes < 60:
-        return f"{minutes}m ago"
-    hours = minutes // 60
-    if hours < 24:
-        return f"{hours}h ago"
-    return f"{hours // 24}d ago"
+    seconds = int((datetime.now(tz=timezone.utc) - value.astimezone(timezone.utc)).total_seconds())
+    n = abs(seconds)
+    if n < 60:
+        span = f"{n}s"
+    elif n < 3600:
+        span = f"{n // 60}m"
+    elif n < 86400:
+        span = f"{n // 3600}h"
+    else:
+        span = f"{n // 86400}d"
+    return f"in {span}" if seconds < 0 else f"{span} ago"
 
 
 def _to_json(value: Any) -> str:
